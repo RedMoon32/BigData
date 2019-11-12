@@ -1,4 +1,9 @@
 [debug] "not up to date. inChanged = true, force = false
+<<<<<<< HEAD
 [debug] Updating ProjectRef(uri("file:/home/rinat/IdeaProjects/BDAssignment2/"), "bdassignment2")...
 [debug] Done updating ProjectRef(uri("file:/home/rinat/IdeaProjects/BDAssignment2/"), "bdassignment2")
+=======
+[debug] Updating ProjectRef(uri("file:/home/alex/IdeaProjects/BigDataAssignment/"), "bigdataassignment")...
+[debug] Done updating ProjectRef(uri("file:/home/alex/IdeaProjects/BigDataAssignment/"), "bigdataassignment")
+>>>>>>> 6709e06ed3374fb8ba73769fab7f14b22a579354
 [warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.
