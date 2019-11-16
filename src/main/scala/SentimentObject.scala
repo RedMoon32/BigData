@@ -8,6 +8,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import scala.io.Source
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.{StructField, DoubleType, StringType}
+import TextUtilities.cleanText
 
 object SentimentObject {
   def main(args: Array[String]): Unit = {
@@ -34,6 +37,15 @@ object SentimentObject {
     val Array(trainingData, testData) = df.randomSplit(Array(0.7, 0.3))
     val tweets_train = trainingData.withColumnRenamed("Sentiment", "label")
     val tweets_test = testData.withColumnRenamed("Sentiment", "label")
+    val tweets_list = tweets.select("SentimentText").rdd.map(r => cleanText(r(0).toString)).collect()
+
+    val new_column = tweets_list
+    val rows = tweets.rdd.zipWithIndex.map(_.swap)
+      .join(sc.parallelize(new_column).zipWithIndex.map(_.swap))
+      .values
+      .map { case (row: Row, x: String) => Row.fromSeq(row.toSeq :+ x) }
+    val cleaned_tweets = sqlContext.createDataFrame(rows, tweets.schema.add("CleanedSentimentText", StringType, false))
+    cleaned_tweets.show(100, false)
 
     val lines = df.rdd
     val training_rdd = trainingData.rdd
@@ -73,12 +85,12 @@ object SentimentObject {
     //    // And load it back in during production
     //    val sameModel = PipelineModel.load("/tmp/lrmodel")
     println("And now... Im gonna test the model!")
-    model1.transform(tweets_test)
-      .select("features", "label", "probability", "prediction")
-      .collect()
-      .foreach { case Row(features: Vector, label: Int, prob: Vector, prediction: Double) =>
-        println(s"($features, $label) -> prob=$prob, prediction=$prediction")
-      }
+    //    model1.transform(tweets_test)
+    //      .select("features", "label", "probability", "prediction")
+    //      .collect()
+    //      .foreach { case Row(features: Vector, label: Int, prob: Vector, prediction: Double) =>
+    //        println(s"($features, $label) -> prob=$prob, prediction=$prediction")
+    //      }
   }
-}
 
+}
