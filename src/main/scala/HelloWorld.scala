@@ -7,8 +7,11 @@ object HelloWorld {
 
     // Create a local StreamingContext with two working thread and batch interval of 1 second.
     // The master requires 2 cores to prevent from a starvation scenario.
-    val conf = new SparkConf().setMaster("local[2]").setAppName("NetworkWordCount")
-    val ssc = new StreamingContext(conf, Seconds(1))
-    print("Hello World");
+    val spark = org.apache.spark.sql.SparkSession
+      .builder()
+      .master("local[2]")
+      .appName("Spark CSV Reader")
+      .getOrCreate;
+    print(new LabelTrainedChecker().compare(spark, "./data/labeled.csv", "./data/predicted.csv"))
   }
 }
