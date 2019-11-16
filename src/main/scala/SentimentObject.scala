@@ -11,7 +11,6 @@ import scala.io.Source
 
 object SentimentObject {
   def main(args: Array[String]): Unit = {
-    System.setProperty("hadoop.home.dir", "D:\\New\\hadoop")
     var RegexList = Map[String, String]()
     RegexList += ("punctuation" -> "[^a-zA-Z0-9]")
     RegexList += ("digits" -> "\\b\\d+\\b")
@@ -126,27 +125,6 @@ object SentimentObject {
       .foreach { case Row(features: Vector, label: Int, prob: Vector, prediction: Double) =>
         println(s"($features, $label) -> prob=$prob, prediction=$prediction")
       }
-//    Now lets use the stanford nlp model
-
-
-
-    //    val lineLengths = lines.map(s => s.length)
-    //    val totalLength = lineLengths.reduce((a, b) => a + b)
-    //    println(s"I think there are $totalLength rows")
-    //
-    //    df.printSchema()
-    //    df.filter($"Sentiment" > 0).show()
-    //    df.groupBy("Sentiment").count().show()
-    //    val tweets = df.cache()
-    //    tweets.map(twit => "" + twit(2)).show()
-
-    //    trainingData.show()
-    //    println("test data")
-    //    testData.show()
-
-    //    val lineLengths = test_rdd.map(s => s.length)
-    //    val totalLength = lineLengths.reduce((a, b) => a + b)
-    //    println(s"I think there are ${totalLength} rows in test data")
   }
 }
 
