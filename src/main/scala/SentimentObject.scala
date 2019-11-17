@@ -8,56 +8,12 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import scala.io.Source
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.{StructField, DoubleType, StringType}
+import TextUtilities.cleanText
 
 object SentimentObject {
   def main(args: Array[String]): Unit = {
-    System.setProperty("hadoop.home.dir", "D:\\New\\hadoop")
-    var RegexList = Map[String, String]()
-    RegexList += ("punctuation" -> "[^a-zA-Z0-9]")
-    RegexList += ("digits" -> "\\b\\d+\\b")
-    RegexList += ("white_space" -> "\\s+")
-    RegexList += ("small_words" -> "\\b[a-zA-Z0-9]{1,2}\\b")
-    RegexList += ("urls" -> "(https?\\://)\\S+")
-    //    RegexList += ("aliases" -> "@\\b[a-zA-Z0-9]\\b")
-    //todo: check regex for @...
-    // todo: handle repeated letters as in "juuuust chilling!!"
-    var Stopwords = Map[String, List[String]]()
-    Stopwords += ("english" -> Source.fromFile("./data/stopwords.txt").getLines().toList)
-
-    def removeRegex(txt: String, flag: String): String = {
-      val regex = RegexList.get(flag)
-      var cleaned = txt
-      regex match {
-        case Some(value) =>
-          if (value.equals("white_space")) cleaned = txt.replaceAll(value, "")
-          else cleaned = txt.replaceAll(value, " ")
-        case None => println("No regex flag matched")
-      }
-      cleaned
-    }
-
-    def removeCustomWords(txt: String, flag: String): String = {
-      var words = txt.split(" ")
-      val stopwords = Stopwords.get(flag)
-      stopwords match {
-        case Some(value) => words = words.filter(x => !value.contains(x))
-        case None => println("No stopword flag matched")
-      }
-      words.mkString(" ")
-    }
-
-    def cleanDocument(document_text: String): String = {
-      var text = document_text.toLowerCase
-      text = removeRegex(text, "urls")
-      text = removeRegex(text, "punctuation")
-      text = removeRegex(text, "digits")
-      text = removeRegex(text, "small_words")
-      text = removeRegex(text, "white_space")
-      text = removeCustomWords(text, "english")
-      text
-    }
-
-
     val conf = new SparkConf().setMaster("local[2]").setAppName("DC")
     val sc = new SparkContext(conf)
     //    sc.setLogLevel("WARN")
@@ -81,6 +37,15 @@ object SentimentObject {
     val Array(trainingData, testData) = df.randomSplit(Array(0.7, 0.3))
     val tweets_train = trainingData.withColumnRenamed("Sentiment", "label")
     val tweets_test = testData.withColumnRenamed("Sentiment", "label")
+    val tweets_list = tweets.select("SentimentText").rdd.map(r => cleanText(r(0).toString)).collect()
+
+    val new_column = tweets_list
+    val rows = tweets.rdd.zipWithIndex.map(_.swap)
+      .join(sc.parallelize(new_column).zipWithIndex.map(_.swap))
+      .values
+      .map { case (row: Row, x: String) => Row.fromSeq(row.toSeq :+ x) }
+    val cleaned_tweets = sqlContext.createDataFrame(rows, tweets.schema.add("CleanedSentimentText", StringType, false))
+    cleaned_tweets.show(100, false)
 
     val lines = df.rdd
     val training_rdd = trainingData.rdd
@@ -120,33 +85,12 @@ object SentimentObject {
     //    // And load it back in during production
     //    val sameModel = PipelineModel.load("/tmp/lrmodel")
     println("And now... Im gonna test the model!")
-    model1.transform(tweets_test)
-      .select("features", "label", "probability", "prediction")
-      .collect()
-      .foreach { case Row(features: Vector, label: Int, prob: Vector, prediction: Double) =>
-        println(s"($features, $label) -> prob=$prob, prediction=$prediction")
-      }
-//    Now lets use the stanford nlp model
-
-
-
-    //    val lineLengths = lines.map(s => s.length)
-    //    val totalLength = lineLengths.reduce((a, b) => a + b)
-    //    println(s"I think there are $totalLength rows")
-    //
-    //    df.printSchema()
-    //    df.filter($"Sentiment" > 0).show()
-    //    df.groupBy("Sentiment").count().show()
-    //    val tweets = df.cache()
-    //    tweets.map(twit => "" + twit(2)).show()
-
-    //    trainingData.show()
-    //    println("test data")
-    //    testData.show()
-
-    //    val lineLengths = test_rdd.map(s => s.length)
-    //    val totalLength = lineLengths.reduce((a, b) => a + b)
-    //    println(s"I think there are ${totalLength} rows in test data")
+    //    model1.transform(tweets_test)
+    //      .select("features", "label", "probability", "prediction")
+    //      .collect()
+    //      .foreach { case Row(features: Vector, label: Int, prob: Vector, prediction: Double) =>
+    //        println(s"($features, $label) -> prob=$prob, prediction=$prediction")
+    //      }
   }
-}
 
+}
