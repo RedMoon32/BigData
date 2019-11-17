@@ -6,6 +6,7 @@ object TextUtilities {
   // todo: handle repeated letters as in "juuuust chilling!!"
 
   var RegexList = Map[String, String]()
+  RegexList += ("quotes" -> "@[^\\s]+")
   RegexList += ("punctuation" -> "[^a-zA-Z0-9]")
   RegexList += ("digits" -> "\\b\\d+\\b")
   RegexList += ("white_space" -> "\\s+")
@@ -39,6 +40,7 @@ object TextUtilities {
 
   def cleanText(document_text: String): String = {
     var text = document_text.toLowerCase
+    text = removeRegex(text, "quotes")
     text = removeRegex(text, "urls")
     text = removeRegex(text, "punctuation")
     text = removeRegex(text, "digits")
