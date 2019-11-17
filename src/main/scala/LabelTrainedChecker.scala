@@ -12,7 +12,7 @@ class LabelTrainedChecker {
       .option("delimiter", ",")
       .option("inferSchema", "true")
       .load(inputName)
-      .toDF("ItemID", "Sentiment1", "Twitter1")
+      .toDF("Sentiment1", "Twitter1")
 
     val sc = spark.sparkContext
 
