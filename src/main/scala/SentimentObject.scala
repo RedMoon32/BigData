@@ -17,6 +17,9 @@ import org.apache.spark.ml.tuning.{CrossValidator, ParamGridBuilder}
 import org.apache.spark.mllib.classification.SVMWithSGD
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.util.MLUtils
 //import lrModel.train_lr
 
 object SentimentObject {
@@ -92,6 +95,12 @@ object SentimentObject {
     val lrcvAccuracy = lrEvaluator.evaluate(lrcvPredictions)
     println(s"LR CV with TFIDF train accuracy = ${lrcvAccuracy}")
 
+//    //    lrCVmodel.clearThreshold
+//    // Compute raw scores on the test set
+//    val predictionAndLabels = cleaned_tweets.map { case LabeledPoint(label, features) =>
+//      val prediction = lrCVmodel.predict(features)
+//      (prediction, label)
+//    }
 
     //Random Forest CV Classifier
     // Processing
@@ -134,8 +143,14 @@ object SentimentObject {
       .setLabelCol("indexedLabel")
       .setPredictionCol("prediction")
       .setMetricName("accuracy")
+    val rfcvEvaluator2 = new MulticlassClassificationEvaluator()
+      .setLabelCol("indexedLabel")
+      .setPredictionCol("prediction")
+      .setMetricName("F-measure")
     val rfcvAccuracy = rfcvEvaluator.evaluate(rfcvPredictions)
+    val rfcvFscore = rfcvEvaluator2.evaluate(rfcvPredictions)
     println(s"RFCV with TFIDF train accuracy = ${rfcvAccuracy}")
+    println(s"RFCV with TFIDF train F-measure = ${rfcvFscore}")
 
   }
 
