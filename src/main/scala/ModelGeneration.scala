@@ -70,8 +70,7 @@ object ModelGeneration {
 
 
     val lb = new LabelTrainedChecker()
-    val a = lb.fscore(lsvcPredictions.toDF(), spark)
-    println(s"F1 Score on SVMTFIDF - $a")
+    lb.fscore(lsvcPredictions.toDF(), spark, "SVM with TFIDF")
 
     val lsvcEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
@@ -113,8 +112,7 @@ object ModelGeneration {
     val svmPredictions = model.transform(train)
 
     val lb = new LabelTrainedChecker()
-    val a = lb.fscore(svmPredictions.toDF(), spark)
-    println(s"F1 Score on SVMW2V - $a")
+    lb.fscore(svmPredictions.toDF(), spark, "SVM with W2V")
 
     val svmEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
@@ -162,8 +160,7 @@ object ModelGeneration {
     val lrcvPredictions = lrCVmodel.transform(train)
 
     val lb = new LabelTrainedChecker()
-    val a = lb.fscore(lrcvPredictions.toDF(), spark)
-    println(s"F1 Score on  LR - $a")
+    lb.fscore(lrcvPredictions.toDF(), spark, "LR with TFIDF")
 
     val lrEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
@@ -213,8 +210,7 @@ object ModelGeneration {
     val rfcvPredictions = rfcvModel.transform(train)
 
     val lb = new LabelTrainedChecker()
-    val a = lb.fscore(rfcvPredictions.toDF(), spark)
-    println(s"F1 Score on SVMW2V - $a")
+    lb.fscore(rfcvPredictions.toDF(), spark, "RF with TFIDF")
 
     val rfcvEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("indexedLabel")

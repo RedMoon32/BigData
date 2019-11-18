@@ -1,11 +1,13 @@
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import Utiliies.{getListOfSubDirectories, mergeModelOutput, saveAsTextFileAndMerge}
+import org.apache.log4j.{Level, Logger}
 
 object FscoreChecker {
 
   def main(args: Array[String]): Unit = {
-
+    Logger.getLogger("org").setLevel(Level.WARN)
+    Logger.getLogger("akka").setLevel(Level.WARN)
     // Create a local StreamingContext with two working thread and batch interval of 1 second.
     // The master requires 2 cores to prevent from a starvation scenario.
     val spark = org.apache.spark.sql.SparkSession
@@ -18,7 +20,7 @@ object FscoreChecker {
     val models = getListOfSubDirectories(data)
     var res : List[(String, Double)] = List()
     for ( i <- models ) {
-      val a = lbl.compare(spark, "./data/labeled.csv",  "./final/models/"+i+"/output.csv")
+      val a = lbl.compare(spark, "./data/labeled.csv",  "./final/models/"+i+"/output.csv", i)
       res = res:+((i,a.toDouble))
     }
     for (r <- res){

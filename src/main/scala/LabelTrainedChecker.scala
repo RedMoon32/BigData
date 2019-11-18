@@ -3,7 +3,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 class LabelTrainedChecker {
 
-  def compare(spark: SparkSession, inputName: String, inputHdfsPath: String) = {
+  def compare(spark: SparkSession, inputName: String, inputHdfsPath: String, name: String) = {
 
     // todo - preprocess using CleanDocument
     val labeled = spark.read
@@ -30,10 +30,10 @@ class LabelTrainedChecker {
     predicted.show()
     val joined = predicted.join(labeled, predicted("SentimentText").equalTo(labeled("SentimentText1")), "inner").select("SentimentText", "label", "prediction")
     joined.show()
-    fscore(joined, spark)
+    fscore(joined, spark, s"$name streaming")
   }
 
-  def fscore(merged: DataFrame, spark: SparkSession): Float = {
+  def fscore(merged: DataFrame, spark: SparkSession, name: String): Float = {
     import spark.implicits._
     val tp = merged
       .where($"label" === 1 && $"prediction" === 1).count()
@@ -46,7 +46,10 @@ class LabelTrainedChecker {
     val precision = (tp.toFloat / (tp + fp))
     val recall = (tp.toFloat  / (tp + fn))
     val fscore = 2 * ((precision * recall).toFloat  / (precision + recall))
-
+    println(s"$name statistics:")
+    println(s"\tPrecision: $precision")
+    println(s"\tRecall: $recall")
+    println(s"\tF1 Score: $fscore")
     fscore
   }
 }
