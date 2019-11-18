@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.Tokenizer","timestamp":1574038353907,"sparkVersion":"2.4.4","uid":"tok_4da876a2aee4","paramMap":{"outputCol":"tokens","inputCol":"SentimentText"},"defaultParamMap":{"outputCol":"tok_4da876a2aee4__output"}}

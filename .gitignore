@@ -1,3 +1,4 @@
 *.idea
 target/
-/tmp/models/lrmodel/
+project/
+tmp/
