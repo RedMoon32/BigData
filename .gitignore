@@ -1,4 +1,7 @@
 *.idea
 target/
-project/
-tmp/
+project
+final
+models
+src/checkpoints
+
