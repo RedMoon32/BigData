@@ -55,13 +55,11 @@ object Utiliies {
 
         if (!labeledFile.isEmpty) {
           val labeled = labeledFile.toDF("Time", "OriginalText", "prediction")
-          labeled.show()
           result = result.union(labeled)
         }
 
         if (!result.isEmpty){
           result.write.mode("overwrite").csv(tmpPath + "output.csv/")
-//          merge(tmpPath + "/" + modelName + "/output.csv", finalPath, "output.csv")
           merge(tmpPath + "output.csv/", finalPath, "output.csv")
         }
       }

@@ -48,8 +48,10 @@ object Streaming {
         lines.foreachRDD{ rdd =>
           if (!rdd.isEmpty) {
             val df = rdd.map {
-              case originalText: String => (originalText, cleanText(originalText), now.toString)
-            }.toDF("OriginalText", "SentimentText", "Time")
+              case originalText: String =>
+                val cleanedText = cleanText(originalText)
+                (originalText, cleanedText, now.toString, cleanedText.split(" "))
+            }.toDF("OriginalText", "SentimentText", "Time", "SplittedText")
             predictAndWrite(df, count)
             count += 1
           }
