@@ -38,11 +38,11 @@ class LabelTrainedChecker {
     val tp = merged
       .where($"Sentiment1" === 1 && $"Sentiment2" === 1).count()
     val tn = merged
-      .where($"Sentiment1" === 1 && $"Sentiment2" === 0).count()
+      .where($"Sentiment1" === 0 && $"Sentiment2" === 0).count()
     val fp = merged
       .where($"Sentiment1" === 0 && $"Sentiment2" === 1).count()
     val fn = merged
-      .where($"Sentiment1" === 0 && $"Sentiment2" === 0).count()
+      .where($"Sentiment1" === 1 && $"Sentiment2" === 0).count()
     val precision = (tp.toFloat / (tp + fp))
     val recall = (tp.toFloat  / (tp + fn))
     val fscore = 2 * ((precision * recall).toFloat  / (precision + recall))
