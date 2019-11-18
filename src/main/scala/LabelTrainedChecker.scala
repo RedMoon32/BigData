@@ -12,7 +12,7 @@ class LabelTrainedChecker {
       .option("delimiter", ",")
       .option("inferSchema", "true")
       .load(inputName)
-      .toDF("Sentiment1", "Twitter1")
+      .toDF("label", "SentimentText1")
 
     val sc = spark.sparkContext
 
@@ -24,11 +24,11 @@ class LabelTrainedChecker {
       .option("delimiter", ",")
       .option("inferSchema", "true")
       .load(inputHdfsPath)
-      .toDF("Time", "Twitter2", "Sentiment2")
+      .toDF("Time", "SentimentText", "prediction")
 
 
     predicted.show()
-    val joined = predicted.join(labeled, predicted("Twitter2").equalTo(labeled("Twitter1")), "inner").selectExpr("Twitter1", "Sentiment1", "Sentiment2")
+    val joined = predicted.join(labeled, predicted("SentimentText").equalTo(labeled("SentimentText1")), "inner").select("SentimentText", "label", "prediction")
     joined.show()
     fscore(joined, spark)
   }
@@ -36,13 +36,13 @@ class LabelTrainedChecker {
   def fscore(merged: DataFrame, spark: SparkSession): Float = {
     import spark.implicits._
     val tp = merged
-      .where($"Sentiment1" === 1 && $"Sentiment2" === 1).count()
+      .where($"label" === 1 && $"prediction" === 1).count()
     val tn = merged
-      .where($"Sentiment1" === 1 && $"Sentiment2" === 0).count()
+      .where($"label" === 0 && $"prediction" === 0).count()
     val fp = merged
-      .where($"Sentiment1" === 0 && $"Sentiment2" === 1).count()
+      .where($"label" === 0 && $"prediction" === 1).count()
     val fn = merged
-      .where($"Sentiment1" === 0 && $"Sentiment2" === 0).count()
+      .where($"label" === 1 && $"prediction" === 0).count()
     val precision = (tp.toFloat / (tp + fp))
     val recall = (tp.toFloat  / (tp + fn))
     val fscore = 2 * ((precision * recall).toFloat  / (precision + recall))

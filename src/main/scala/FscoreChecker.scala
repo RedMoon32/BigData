@@ -16,10 +16,13 @@ object FscoreChecker {
     val data = "./final/models";
     val lbl = new LabelTrainedChecker();
     val models = getListOfSubDirectories(data)
+    var res : List[(String, Double)] = List()
     for ( i <- models ) {
       val a = lbl.compare(spark, "./data/labeled.csv",  "./final/models/"+i+"/output.csv")
-      println(s"F1 Score on  $i - $a")
+      res = res:+((i,a.toDouble))
     }
-    // print(new LabelTrainedChecker().compare(spark, "./data/labeled.csv", "./data/predicted.csv"))
+    for (r <- res){
+      println(s"F1 Score on  ${r._1} - ${r._2}");
+    }
   }
 }

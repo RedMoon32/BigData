@@ -1,7 +1,7 @@
-import org.apache.spark.ml.{Pipeline}
+import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{LinearSVC, LogisticRegression, RandomForestClassifier}
 import org.apache.spark.ml.feature.{HashingTF, IndexToString, StringIndexer, Tokenizer, VectorIndexer, Word2Vec}
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.types.{ArrayType, StringType, StructType}
 import org.apache.spark.ml.evaluation.BinaryClassificationEvaluator
@@ -14,6 +14,7 @@ object ModelGeneration {
   val conf = new SparkConf().setMaster("local[2]").setAppName("DC")
   val sc = new SparkContext(conf)
   val sqlContext = new SQLContext(sc)
+
 
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -42,18 +43,18 @@ object ModelGeneration {
       .values
       .map { case (row: Row, x: String) => Row.fromSeq(row.toSeq :+ x) }
     var cleaned_tweets = sqlContext.createDataFrame(rows, tweets.schema.add("CleanedSentimentText", StringType, false))
-    val cleaned_tweets_rdd = cleaned_tweets.rdd.map{
+    val cleaned_tweets_rdd = cleaned_tweets.rdd.map {
       case Row(id: Int, label: Int, text: String, cleaned: String) => Row(id, label, text, cleaned, cleaned.split(" "))
     }
     cleaned_tweets = sqlContext.createDataFrame(cleaned_tweets_rdd, cleaned_tweets.schema.add("SplittedText", ArrayType(StringType), false))
 
-    generateLR(cleaned_tweets)
-    generateRandomForest(cleaned_tweets)
-    generateSVMW2V(cleaned_tweets)
-    generateSVMTFIDF(cleaned_tweets)
+    generateLR(cleaned_tweets, spark)
+    generateRandomForest(cleaned_tweets, spark)
+    generateSVMW2V(cleaned_tweets, spark)
+    generateSVMTFIDF(cleaned_tweets, spark)
   }
 
-  def generateSVMTFIDF(train: DataFrame) = {
+  def generateSVMTFIDF(train: DataFrame, spark: SparkSession) = {
     val lsvc = new LinearSVC()
       .setMaxIter(10)
       .setRegParam(0.1)
@@ -66,6 +67,12 @@ object ModelGeneration {
     val lsvcModel = lsvcPipeline.fit(train)
     lsvcModel.write.overwrite().save("./models/svmTFIDFModel")
     val lsvcPredictions = lsvcModel.transform(train)
+
+
+    val lb = new LabelTrainedChecker()
+    val a = lb.fscore(lsvcPredictions.toDF(), spark)
+    println(s"F1 Score on SVMTFIDF - $a")
+
     val lsvcEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
       .setPredictionCol("prediction")
@@ -76,7 +83,7 @@ object ModelGeneration {
 
 
   def generateWord2Vec(train: DataFrame) = {
-    var processedTrainRDD = train.select("CleanedSentimentText").rdd.map{
+    var processedTrainRDD = train.select("CleanedSentimentText").rdd.map {
       case Row(text: String) => Row(text.split(" "))
     }
     val schema = new StructType().add("SplittedText", ArrayType(StringType), false)
@@ -92,7 +99,7 @@ object ModelGeneration {
   }
 
 
-  def generateSVMW2V(train: DataFrame) = {
+  def generateSVMW2V(train: DataFrame, spark: SparkSession) = {
     val word2Vec = generateWord2Vec(train)
     val svm = new LinearSVC()
     val svmPipeline = new Pipeline()
@@ -104,6 +111,11 @@ object ModelGeneration {
     model.write.overwrite().save("./models/svmW2Vmodel")
     println("And now... Im gonna test the model!")
     val svmPredictions = model.transform(train)
+
+    val lb = new LabelTrainedChecker()
+    val a = lb.fscore(svmPredictions.toDF(), spark)
+    println(s"F1 Score on SVMW2V - $a")
+
     val svmEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
       .setPredictionCol("prediction")
@@ -115,7 +127,7 @@ object ModelGeneration {
   }
 
 
-  def generateLR(train: DataFrame): CrossValidatorModel = {
+  def generateLR(train: DataFrame, spark:SparkSession): CrossValidatorModel = {
     val lrTokenizer = new Tokenizer().setInputCol("SentimentText").setOutputCol("tokens")
 
     val lrHashingTF = new HashingTF()
@@ -148,6 +160,11 @@ object ModelGeneration {
     lrCVmodel.write.overwrite().save("./models/lrCVmodel")
     println("And now... Im gonna test the model!")
     val lrcvPredictions = lrCVmodel.transform(train)
+
+    val lb = new LabelTrainedChecker()
+    val a = lb.fscore(lrcvPredictions.toDF(), spark)
+    println(s"F1 Score on  LR - $a")
+
     val lrEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
       .setPredictionCol("prediction")
@@ -158,7 +175,7 @@ object ModelGeneration {
     lrCVmodel
   }
 
-  def generateRandomForest(train: DataFrame): CrossValidatorModel = {
+  def generateRandomForest(train: DataFrame, spark: SparkSession): CrossValidatorModel = {
     // Processing
     val rfTokenizer = new Tokenizer().setInputCol("SentimentText").setOutputCol("tokens")
     val rfHashingTF = new HashingTF()
@@ -195,6 +212,10 @@ object ModelGeneration {
     rfcvModel.write.overwrite().save("./models/rfcvModel")
     val rfcvPredictions = rfcvModel.transform(train)
 
+    val lb = new LabelTrainedChecker()
+    val a = lb.fscore(rfcvPredictions.toDF(), spark)
+    println(s"F1 Score on SVMW2V - $a")
+
     val rfcvEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("indexedLabel")
       .setPredictionCol("prediction")
@@ -204,7 +225,6 @@ object ModelGeneration {
 
     rfcvModel
   }
-
 
 
 }
