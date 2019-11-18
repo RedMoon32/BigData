@@ -1,4 +1,4 @@
 *.idea
 target/
-models
-project
+project/
+tmp/

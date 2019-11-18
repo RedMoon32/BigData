@@ -1,4 +1,4 @@
-import org.apache.spark.ml.{Pipeline, PipelineModel}
+import org.apache.spark.ml.{Pipeline}
 import org.apache.spark.ml.classification.{LinearSVC, LogisticRegression, RandomForestClassifier}
 import org.apache.spark.ml.feature.{HashingTF, IndexToString, StringIndexer, Tokenizer, VectorIndexer, Word2Vec}
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
@@ -42,15 +42,15 @@ object ModelGeneration {
       .values
       .map { case (row: Row, x: String) => Row.fromSeq(row.toSeq :+ x) }
     var cleaned_tweets = sqlContext.createDataFrame(rows, tweets.schema.add("CleanedSentimentText", StringType, false))
-    val cleaned_tweets_rdd = cleaned_tweets.rdd.map {
+    val cleaned_tweets_rdd = cleaned_tweets.rdd.map{
       case Row(id: Int, label: Int, text: String, cleaned: String) => Row(id, label, text, cleaned, cleaned.split(" "))
     }
     cleaned_tweets = sqlContext.createDataFrame(cleaned_tweets_rdd, cleaned_tweets.schema.add("SplittedText", ArrayType(StringType), false))
 
     generateLR(cleaned_tweets)
-//    generateRandomForest(cleaned_tweets)
-//    generateSVMW2V(cleaned_tweets)
-//    generateSVMTFIDF(cleaned_tweets)
+    generateRandomForest(cleaned_tweets)
+    generateSVMW2V(cleaned_tweets)
+    generateSVMTFIDF(cleaned_tweets)
   }
 
   def generateSVMTFIDF(train: DataFrame) = {
@@ -76,7 +76,7 @@ object ModelGeneration {
 
 
   def generateWord2Vec(train: DataFrame) = {
-    var processedTrainRDD = train.select("CleanedSentimentText").rdd.map {
+    var processedTrainRDD = train.select("CleanedSentimentText").rdd.map{
       case Row(text: String) => Row(text.split(" "))
     }
     val schema = new StructType().add("SplittedText", ArrayType(StringType), false)
@@ -131,26 +131,23 @@ object ModelGeneration {
       .setStages(Array(lrTokenizer, lrHashingTF, lr))
     println("Im gonna fit a model you know")
 
-    //    val lrParamGrid = new ParamGridBuilder()
-    //      .addGrid(lrHashingTF.numFeatures, Array(10, 100, 1000))
-    //      .addGrid(lr.regParam, Array(0.1, 0.01))
-    //      .build()
-    //
-    //    val cv = new CrossValidator()
-    //      .setEstimator(lrPipeline)
-    //      .setEvaluator(new BinaryClassificationEvaluator)
-    //      .setEstimatorParamMaps(lrParamGrid)
-    //      .setNumFolds(2) // Use 3+ in practice
-    //      .setParallelism(2) // Evaluate up to 2 parameter settings in parallel
+    val lrParamGrid = new ParamGridBuilder()
+      .addGrid(lrHashingTF.numFeatures, Array(10, 100, 1000))
+      .addGrid(lr.regParam, Array(0.1, 0.01))
+      .build()
 
-    //    val lrCVmodel = cv.fit(train)
-//        PipelineModel.load("/tmp/lrmodel")
-    val lrModel = PipelineModel.load("./models/lrCVmodel/bestModel")
-    lrModel.fit(train)
+    val cv = new CrossValidator()
+      .setEstimator(lrPipeline)
+      .setEvaluator(new BinaryClassificationEvaluator)
+      .setEstimatorParamMaps(lrParamGrid)
+      .setNumFolds(2) // Use 3+ in practice
+      .setParallelism(2) // Evaluate up to 2 parameter settings in parallel
+
+    val lrCVmodel = cv.fit(train)
     println(s"I kinda fitted the model")
-    lrModel.write.overwrite().save("./models/lrModel")
+    lrCVmodel.write.overwrite().save("./models/lrCVmodel")
     println("And now... Im gonna test the model!")
-    val lrcvPredictions = lrModel.transform(train)
+    val lrcvPredictions = lrCVmodel.transform(train)
     val lrEvaluator = new MulticlassClassificationEvaluator()
       .setLabelCol("label")
       .setPredictionCol("prediction")
@@ -158,7 +155,7 @@ object ModelGeneration {
 
     val lrcvAccuracy = lrEvaluator.evaluate(lrcvPredictions)
     println(s"LR CV with TFIDF train accuracy = ${lrcvAccuracy}")
-    lrModel
+    lrCVmodel
   }
 
   def generateRandomForest(train: DataFrame): CrossValidatorModel = {
@@ -207,6 +204,7 @@ object ModelGeneration {
 
     rfcvModel
   }
+
 
 
 }

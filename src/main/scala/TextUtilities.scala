@@ -1,9 +1,6 @@
 import scala.io.Source
 
 object TextUtilities {
-  //    RegexList += ("aliases" -> "@\\b[a-zA-Z0-9]\\b")
-  // todo: check regex for @...
-  // todo: handle repeated letters as in "juuuust chilling!!"
 
   var RegexList = Map[String, String]()
   RegexList += ("quotes" -> "@[^\\s]+")
