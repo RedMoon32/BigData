@@ -5,7 +5,6 @@ class LabelTrainedChecker {
 
   def compare(spark: SparkSession, inputName: String, inputHdfsPath: String, name: String) = {
 
-    // todo - preprocess using CleanDocument
     val labeled = spark.read
       .format("csv")
       .option("header", "false")

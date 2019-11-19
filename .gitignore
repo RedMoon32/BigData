@@ -1,7 +1,5 @@
 *.idea
 target/
 project
-final
-models
 src/checkpoints
-
+tmp

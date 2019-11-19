@@ -8,8 +8,6 @@ object FscoreChecker {
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
-    // Create a local StreamingContext with two working thread and batch interval of 1 second.
-    // The master requires 2 cores to prevent from a starvation scenario.
     val spark = org.apache.spark.sql.SparkSession
       .builder()
       .master("local[2]")
